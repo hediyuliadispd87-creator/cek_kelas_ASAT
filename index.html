@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Peserta — Filter Kelas</title>
+<style>
+  :root {
+    --bg: #f5f3ee;
+    --surface: #ffffff;
+    --surface2: #f0ede6;
+    --text: #1a1a18;
+    --text-muted: #6b6860;
+    --accent: #1d6b4f;
+    --accent-light: #e1f5ee;
+    --accent-mid: #0f6e56;
+    --border: #d8d5ce;
+    --danger: #993c1d;
+    --danger-bg: #faece7;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .wrapper { max-width: 960px; margin: 0 auto; }
+
+  /* ── Header ── */
+  .page-header {
+    margin-bottom: 2rem;
+  }
+  .page-header h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  .page-header p {
+    font-size: .875rem;
+    color: var(--text-muted);
+    margin-top: .25rem;
+  }
+
+  /* ── Filter bar ── */
+  .filter-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+  .filter-bar .field { display: flex; flex-direction: column; gap: .4rem; flex: 1; min-width: 200px; }
+  .filter-bar label { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); }
+  .filter-bar select, .filter-bar input {
+    height: 40px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0 .75rem;
+    font-size: .9rem;
+    background: var(--surface2);
+    color: var(--text);
+    outline: none;
+    transition: border-color .15s;
+  }
+  .filter-bar select:focus, .filter-bar input:focus { border-color: var(--accent); background: #fff; }
+
+  .btn {
+    height: 40px;
+    padding: 0 1.25rem;
+    border-radius: 8px;
+    font-size: .875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: opacity .15s, transform .1s;
+    white-space: nowrap;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-mid); }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--border); }
+
+  /* ── Stats ── */
+  .stats-row {
+    display: flex;
+    gap: .75rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .stat-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: .35rem .9rem;
+    font-size: .8rem;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+  }
+  .stat-chip strong { color: var(--accent); font-size: .95rem; }
+
+  /* ── Table ── */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .table-card table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .875rem;
+  }
+  .table-card thead th {
+    background: var(--surface2);
+    padding: .75rem 1rem;
+    text-align: left;
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .table-card tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+  .table-card tbody tr:last-child { border-bottom: none; }
+  .table-card tbody tr:hover { background: var(--accent-light); }
+  .table-card tbody td { padding: .65rem 1rem; vertical-align: middle; }
+
+  .badge-kelas {
+    display: inline-block;
+    background: var(--accent-light);
+    color: var(--accent-mid);
+    font-weight: 600;
+    font-size: .75rem;
+    padding: .2rem .6rem;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+  .badge-ruang {
+    display: inline-block;
+    background: #f0ede6;
+    color: #6b6860;
+    font-size: .75rem;
+    padding: .2rem .6rem;
+    border-radius: 5px;
+  }
+  .no-col { color: var(--text-muted); font-size: .8rem; width: 40px; }
+
+  /* ── Search highlight ── */
+  mark { background: #fef3c7; color: inherit; border-radius: 2px; }
+
+  /* ── Empty & loader ── */
+  .state-box {
+    padding: 4rem 2rem;
+    text-align: center;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .75rem;
+  }
+  .state-box svg { opacity: .35; }
+  .state-box p { font-size: .9rem; }
+  .state-box small { font-size: .8rem; }
+
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-box {
+    background: var(--danger-bg);
+    border: 1px solid #f0997b;
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    color: var(--danger);
+    font-size: .875rem;
+    margin-bottom: 1rem;
+    display: none;
+  }
+
+  /* ── Export btn ── */
+  .table-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .table-top span { font-size: .85rem; color: var(--text-muted); }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    .table-card table { font-size: .8rem; }
+    .table-card thead th, .table-card tbody td { padding: .55rem .7rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="page-header">
+    <h1>📋 Data Peserta Ujian</h1>
+    <p>Filter dan cari data berdasarkan kelas, nama, atau nomor peserta</p>
+  </div>
+
+  <!-- ── CONFIG: Ganti URL ini setelah deploy GAS ── -->
+  <script>
+    // ⚠️  GANTI dengan URL Web App hasil deploy Google Apps Script Anda
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxKwKGIs1JSXbBUy2hXAT2_ZpfaXM5UAAkikxauzhVzUk5kOVL97dWuttkFdWIwtSvVNw/exec";
+  </script>
+
+  <div id="error-box" class="error-box"></div>
+
+  <div class="filter-bar">
+    <div class="field">
+      <label>Filter Kelas</label>
+      <select id="sel-kelas">
+        <option value="SEMUA">⏳ Memuat kelas...</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Cari Nama / NIS / No. Peserta</label>
+      <input type="text" id="inp-search" placeholder="Ketik untuk mencari…">
+    </div>
+    <button class="btn btn-primary" onclick="loadSiswa()">Tampilkan</button>
+    <button class="btn btn-ghost" onclick="resetFilter()">Reset</button>
+  </div>
+
+  <div class="stats-row" id="stats-row" style="display:none">
+    <div class="stat-chip">Kelas: <strong id="st-kelas">—</strong></div>
+    <div class="stat-chip">Total ditampilkan: <strong id="st-total">0</strong></div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-top">
+      <span id="tbl-info">Pilih kelas lalu klik Tampilkan</span>
+      <button class="btn btn-ghost" onclick="exportCSV()" id="btn-export" style="display:none;font-size:.8rem;height:34px;">⬇ Export CSV</button>
+    </div>
+    <div id="tbl-container">
+      <div class="state-box">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+          <rect x="9" y="3" width="6" height="4" rx="1"/>
+          <line x1="9" y1="12" x2="15" y2="12"/>
+          <line x1="9" y1="16" x2="12" y2="16"/>
+        </svg>
+        <p>Belum ada data</p>
+        <small>Pilih kelas dan klik <strong>Tampilkan</strong></small>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let allData = [];        // data dari GAS
+let filteredData = [];   // setelah filter lokal
+
+// ── Muat daftar kelas saat halaman dibuka ──
+window.onload = async () => {
+  try {
+    const res  = await fetch(`${GAS_URL}?action=getKelas`);
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+
+    const sel = document.getElementById("sel-kelas");
+    sel.innerHTML = `<option value="SEMUA">Semua Kelas</option>`;
+    json.data.forEach(k => {
+      const opt = document.createElement("option");
+      opt.value = opt.textContent = k;
+      sel.appendChild(opt);
+    });
+  } catch (e) {
+    showError("Gagal memuat daftar kelas: " + e.message);
+    document.getElementById("sel-kelas").innerHTML = `<option value="SEMUA">Semua Kelas</option>`;
+  }
+};
+
+// ── Ambil data siswa dari GAS ──
+async function loadSiswa() {
+  const kelas = document.getElementById("sel-kelas").value;
+  setContainer(loader());
+  document.getElementById("btn-export").style.display = "none";
+  document.getElementById("stats-row").style.display  = "none";
+  hideError();
+
+  try {
+    const res  = await fetch(`${GAS_URL}?action=getSiswa&kelas=${encodeURIComponent(kelas)}`);
+    const json = await res.json();
+    if (json.error) throw new Error(json.error);
+
+    allData = json.data;
+    applyLocalFilter();
+  } catch (e) {
+    showError("Gagal mengambil data: " + e.message);
+    setContainer(emptyState("Terjadi kesalahan", e.message));
+  }
+}
+
+// ── Filter lokal (nama / nis / no_peserta) ──
+function applyLocalFilter() {
+  const q = document.getElementById("inp-search").value.trim().toLowerCase();
+  filteredData = q
+    ? allData.filter(r =>
+        r.nama.toLowerCase().includes(q)       ||
+        r.nis_nisn.toLowerCase().includes(q)   ||
+        r.no_peserta.toLowerCase().includes(q) ||
+        r.kelas.toLowerCase().includes(q)
+      )
+    : [...allData];
+
+  renderTable(filteredData, q);
+}
+
+// ── Render tabel ──
+function renderTable(rows, q = "") {
+  const kelas = document.getElementById("sel-kelas").value;
+
+  document.getElementById("st-kelas").textContent = kelas;
+  document.getElementById("st-total").textContent = rows.length;
+  document.getElementById("stats-row").style.display = "flex";
+  document.getElementById("tbl-info").textContent =
+    `${rows.length} data ditemukan` + (q ? ` (kata kunci: "${q}")` : "");
+
+  if (!rows.length) {
+    setContainer(emptyState("Tidak ada data", "Coba ganti filter atau kata kunci pencarian"));
+    return;
+  }
+
+  document.getElementById("btn-export").style.display = "";
+
+  const hl = (txt) => q
+    ? txt.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")})`, "gi"),
+        "<mark>$1</mark>")
+    : txt;
+
+  const rows_html = rows.map((r, i) => `
+    <tr>
+      <td class="no-col">${i + 1}</td>
+      <td><span class="badge-kelas">${hl(r.kelas)}</span></td>
+      <td>${hl(r.nama)}</td>
+      <td><span class="badge-ruang">${r.ruang || '—'}</span></td>
+      <td style="font-family:monospace;font-size:.8rem">${hl(r.nis_nisn)}</td>
+      <td style="font-family:monospace;font-size:.8rem">${hl(r.no_peserta)}</td>
+    </tr>`).join("");
+
+  setContainer(`
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Kelas</th>
+          <th>Nama</th>
+          <th>Ruang</th>
+          <th>NIS / NISN</th>
+          <th>No. Peserta</th>
+        </tr>
+      </thead>
+      <tbody>${rows_html}</tbody>
+    </table>`);
+}
+
+// ── Reset filter ──
+function resetFilter() {
+  document.getElementById("sel-kelas").value = "SEMUA";
+  document.getElementById("inp-search").value = "";
+  allData = filteredData = [];
+  setContainer(emptyState("Belum ada data", "Pilih kelas dan klik Tampilkan"));
+  document.getElementById("stats-row").style.display  = "none";
+  document.getElementById("btn-export").style.display = "none";
+  document.getElementById("tbl-info").textContent = "Pilih kelas lalu klik Tampilkan";
+  hideError();
+}
+
+// ── Export CSV ──
+function exportCSV() {
+  const header = ["No","Kelas","Nama","Ruang","NIS/NISN","No. Peserta"];
+  const body   = filteredData.map((r, i) =>
+    [i+1, r.kelas, r.nama, r.ruang, r.nis_nisn, r.no_peserta]
+      .map(v => `"${(v||"").replace(/"/g,'""')}"`)
+      .join(",")
+  );
+  const csv  = [header.join(","), ...body].join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  const kelas = document.getElementById("sel-kelas").value;
+  a.href     = url;
+  a.download = `peserta_${kelas}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Input search: filter real-time ──
+document.getElementById("inp-search").addEventListener("input", () => {
+  if (allData.length) applyLocalFilter();
+});
+
+// ── Enter on search ──
+document.getElementById("inp-search").addEventListener("keydown", e => {
+  if (e.key === "Enter") loadSiswa();
+});
+
+// ── Helpers ──
+function setContainer(html) {
+  document.getElementById("tbl-container").innerHTML = html;
+}
+function loader() {
+  return `<div class="state-box"><div class="spinner"></div><p>Mengambil data…</p></div>`;
+}
+function emptyState(title, sub) {
+  return `<div class="state-box">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+    </svg>
+    <p>${title}</p><small>${sub}</small></div>`;
+}
+function showError(msg) {
+  const el = document.getElementById("error-box");
+  el.textContent = "⚠ " + msg;
+  el.style.display = "block";
+}
+function hideError() {
+  document.getElementById("error-box").style.display = "none";
+}
+</script>
+</body>
+</html>
